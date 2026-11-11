@@ -131,7 +131,7 @@ const WEAPONS=[
   {n:"Rusty Dagger",b:0,p:0,d:"Your grandfather's. Mostly rust."},
   {n:"Iron Sword",b:3,p:60,d:"Honest steel, folded once."},
   {n:"Steel Longsword",b:7,p:160,d:"Balanced for two-handed swings."},
-  {n:"Runeblade",b:13,p:400,d:"Etched with wards against the dead."}
+  {n:"Runeblade",b:13,p:400,d:"Etched with wards against the dead."}  
 ];
 const ARMOR=[
   {n:"Travel Tunic",b:0,p:0,d:"Keeps the rain off. Barely."},
@@ -140,21 +140,26 @@ const ARMOR=[
   {n:"Tower Plate",b:9,p:360,d:"Forged to survive the climb."}
 ];
 const UPG=[
-  {k:"vit",n:"Vitality drills",d:"+10 max HP",base:40},
-  {k:"str",n:"Blade forms",d:"+2 ATK",base:50},
-  {k:"grd",n:"Shield work",d:"+1 DEF",base:45}
+  {k:"vit",n:"Vitality drills",d:"+10 max HP",base:200},
+  {k:"str",n:"Blade forms",d:"+2 ATK",base:200},
+  {k:"grd",n:"Shield work",d:"+1 DEF",base:200}
 ];
 const POTS=[
-  {k:"heal",n:"Healing Draught",d:"Restores 30 HP",p:25},
-  {k:"greater",n:"Greater Remedy",d:"Restores all HP",p:70},
-  {k:"tonic",n:"Bull's Blood Tonic",d:"+5 ATK for one tower fight",p:45}
+  {k:"heal",n:"Healing Draught",d:"Restores 30 HP",p:50},
+  {k:"greater",n:"Greater Remedy",d:"Restores all HP",p:100},
+  {k:"tonic",n:"Bull's Blood Tonic",d:"+5 ATK for one tower fight",p:150}
 ];
 const FLOORS=[
-  {n:"Cellar Rat-King",hp:22,atk:5,g:30,f:"Fat on tower scraps and very proud of it."},
-  {n:"Skeleton Warden",hp:42,atk:9,g:55,f:"Still guarding a door no one remembers."},
-  {n:"Cursed Knight",hp:72,atk:14,g:90,f:"His oath outlived him."},
-  {n:"Gloam Wraith",hp:105,atk:19,g:140,f:"Cold enough to frost your breath at ten paces."},
-  {n:"The Hollow King",hp:190,atk:26,g:500,f:"The crown is the only part of him still solid.",boss:true}
+  {n:"Cellar Rat-King",hp:50,atk:5,g:500,f:"Fat on tower scraps and very proud of it."},
+  {n:"Skeleton Warden",hp:60,atk:10,g:500,f:"Still guarding a door no one remembers."},
+  {n:"Cursed Knight",hp:75,atk:15,g:500,f:"His oath outlived him."},
+  {n:"Gloam Wraith",hp:100,atk:25,g:500,f:"Cold enough to frost your breath at ten paces."},
+  {n:"The Hollow King",hp:250,atk:35,g:500,f:"The crown is the only part of him still solid.",boss:true}
+  {n:"Ice Dragon",hp:200:,atk:50,g:500,f:"Breathes ice spikes at a temperture of absolute zero."},
+  {n:"Zombie Queen",hp:280,atk:80,g:500,f:""},
+  {n:"Mad Scientist",hp:320,atk:100,g:500,f:"Has potions from 1000 years in the future."},
+  {n:"The Unknown",hp:390,atk:100,g:500,f:"No one has ever unveiled his idenity."},
+  {n:"Grim Reaper",hp:525,atk:120,g:500,f:"Taken 2499 lives. Your's may be #2500.",boss:true}
 ];
 const BOUNTIES=[
   {id:"arm",n:"Arm yourself",d:"Buy a new weapon at Ironhook Forge.",g:40,goal:1,v:s=>s.weapon>0?1:0},
