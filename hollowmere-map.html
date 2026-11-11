@@ -1,0 +1,572 @@
+<title>Hollowmere Town Map</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Grenze:wght@600;700&family=Alegreya+Sans:wght@400;500;700&display=swap">
+<style>
+/* Layout: twilight cartography. A hand-painted canvas map is the hero; a brass-trimmed ledger panel sits beside it (below on phones). Single committed dark look. */
+:root{
+  --night:#121619;
+  --panel:#1a1f24;
+  --panel-2:#222930;
+  --line:#343e47;
+  --text:#ebe4d4;
+  --muted:#a0a79d;
+  --brass:#d9a441;
+  --brass-ink:#1b1408;
+  --hp:#d0483a;
+  --good:#71c48e;
+  --arcane:#a58ae6;
+  --font-display:"Grenze", "Palatino Linotype", Georgia, serif;
+  --font-body:"Alegreya Sans", "Segoe UI", system-ui, sans-serif;
+  color-scheme:dark;
+}
+*{box-sizing:border-box}
+html,body{background:var(--night)}
+body{color:var(--text);font-family:var(--font-body);font-size:15px;line-height:1.45;
+  padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));padding-block:16px 32px}
+.wrap{max-width:1480px;margin:0 auto;display:flex;flex-direction:column;gap:14px}
+header{display:flex;flex-wrap:wrap;align-items:flex-end;justify-content:space-between;gap:12px}
+h1{font-family:var(--font-display);font-weight:700;font-size:clamp(28px,4vw,40px);line-height:1;margin:0;letter-spacing:.01em;color:var(--brass)}
+.tag{margin:4px 0 0;color:var(--muted);font-size:14px}
+.hud{display:flex;flex-wrap:wrap;gap:8px;align-items:center}
+.chip{display:flex;align-items:center;gap:6px;background:var(--panel);border:1px solid var(--line);border-radius:6px;padding:5px 10px;font-variant-numeric:tabular-nums;font-weight:500}
+.chip b{font-weight:700}
+.chip .k{color:var(--muted);font-size:12px;text-transform:uppercase;letter-spacing:.08em}
+.hpbar{width:90px;height:8px;background:#3a2422;border-radius:4px;overflow:hidden}
+.hpbar i{display:block;height:100%;background:var(--hp);transition:width .3s}
+.coin{width:12px;height:12px;border-radius:50%;background:radial-gradient(circle at 35% 35%,#ffe08a,var(--brass) 60%,#8a6420)}
+.layout{display:grid;grid-template-columns:minmax(0,1fr) 390px;gap:16px;align-items:start}
+@media (max-width:1100px){.layout{grid-template-columns:minmax(0,1fr)}}
+.mapscroll{overflow-x:auto;border-radius:10px;border:1px solid var(--line);background:#2b3a2c}
+.map{position:relative;min-width:760px;aspect-ratio:3/2;max-width:100%}
+@media (max-width:820px){.map{max-width:none}}
+.map canvas{position:absolute;inset:0;width:100%;height:100%;display:block}
+#fx{cursor:pointer}
+.pin{position:absolute;transform:translate(-50%,0);font-family:var(--font-display);font-weight:600;font-size:clamp(13px,1.25vw,17px);
+  background:rgba(18,22,25,.86);color:var(--text);border:1px solid rgba(217,164,65,.55);border-radius:5px;padding:3px 10px 4px;white-space:nowrap;cursor:pointer;
+  box-shadow:0 2px 8px rgba(0,0,0,.4);transition:background .15s,color .15s,transform .15s}
+.pin small{display:block;font-family:var(--font-body);font-weight:500;font-size:11px;color:var(--muted);letter-spacing:.06em;text-transform:uppercase;line-height:1.1}
+.pin:hover{background:var(--panel-2);transform:translate(-50%,-2px)}
+.pin.active{background:var(--brass);color:var(--brass-ink);border-color:var(--brass)}
+.pin.active small{color:#4a3510}
+.pin:focus-visible,.btn:focus-visible{outline:2px solid var(--brass);outline-offset:2px}
+.hint{color:var(--muted);font-size:13px;margin:6px 2px 0}
+aside{background:var(--panel);border:1px solid var(--line);border-radius:10px;overflow:hidden;min-width:0}
+.ph{padding:16px 18px 12px;border-bottom:1px solid var(--line);background:linear-gradient(180deg,var(--panel-2),var(--panel))}
+.ph .eyebrow{font-size:12px;letter-spacing:.12em;text-transform:uppercase;color:var(--brass)}
+.ph h2{font-family:var(--font-display);font-size:28px;line-height:1.05;margin:2px 0 4px;text-wrap:balance}
+.ph p{margin:0;color:var(--muted);font-size:14px}
+.pb{padding:14px 18px 18px;display:flex;flex-direction:column;gap:14px}
+.sec h3{font-size:12px;letter-spacing:.12em;text-transform:uppercase;color:var(--muted);margin:0 0 6px;font-weight:700}
+.rows{display:flex;flex-direction:column}
+.row{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:10px;align-items:center;padding:9px 0;border-top:1px solid var(--line)}
+.row:first-child{border-top:0}
+.row .n{font-weight:700}
+.row .d{color:var(--muted);font-size:13px}
+.price{font-variant-numeric:tabular-nums;color:var(--brass);font-weight:700}
+.btn{font:inherit;font-weight:700;font-size:14px;border-radius:5px;padding:6px 12px;cursor:pointer;border:1px solid var(--brass);background:transparent;color:var(--brass);white-space:nowrap}
+.btn:hover:not(:disabled){background:rgba(217,164,65,.12)}
+.btn.primary{background:var(--brass);color:var(--brass-ink)}
+.btn.primary:hover:not(:disabled){background:#e8b553}
+.btn.danger{border-color:var(--hp);color:#f08a7f}
+.btn:disabled{opacity:.4;cursor:not-allowed}
+.btns{display:flex;flex-wrap:wrap;gap:8px}
+.pips{display:inline-flex;gap:3px;vertical-align:middle;margin-left:6px}
+.pips i{width:9px;height:9px;border-radius:2px;background:var(--line)}
+.pips i.on{background:var(--brass)}
+.status{font-size:12px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;padding:2px 7px;border-radius:4px;border:1px solid var(--line);color:var(--muted)}
+.status.ok{color:var(--good);border-color:rgba(113,196,142,.45)}
+.status.boss{color:#f08a7f;border-color:rgba(208,72,58,.5)}
+.fight{background:var(--panel-2);border:1px solid rgba(208,72,58,.45);border-radius:8px;padding:12px;display:flex;flex-direction:column;gap:10px}
+.fighter{display:grid;grid-template-columns:90px minmax(0,1fr) auto;gap:8px;align-items:center;font-variant-numeric:tabular-nums}
+.bar{height:10px;background:#2b2f34;border-radius:5px;overflow:hidden}
+.bar i{display:block;height:100%;background:var(--hp);transition:width .25s}
+.bar.foe i{background:var(--arcane)}
+.log{font-size:13px;color:var(--muted);max-height:150px;overflow:auto;display:flex;flex-direction:column;gap:2px;margin:0;padding:0;list-style:none}
+.log li:first-child{color:var(--text)}
+.flavor{font-style:italic;color:var(--muted);margin:0;font-size:14px}
+.note{font-size:13px;color:var(--muted);margin:0}
+.toast{position:fixed;left:50%;bottom:calc(20px + env(safe-area-inset-bottom,0px));transform:translateX(-50%);background:var(--panel-2);border:1px solid var(--brass);color:var(--text);padding:9px 16px;border-radius:6px;font-weight:500;box-shadow:0 6px 20px rgba(0,0,0,.5);max-width:calc(100% - 32px);z-index:20}
+footer{display:flex;justify-content:flex-end}
+@media (prefers-reduced-motion:reduce){*{transition:none!important}}
+</style>
+
+<div class="wrap">
+  <header>
+    <div>
+      <h1>Hollowmere</h1>
+      <p class="tag">A river town under the shadow of the Hollow Tower. Pick a place on the map.</p>
+    </div>
+    <div class="hud" id="hud" aria-live="polite"></div>
+  </header>
+
+  <div class="layout">
+    <div>
+      <div class="mapscroll">
+        <div class="map" id="map">
+          <canvas id="base" aria-hidden="true"></canvas>
+          <canvas id="fx" role="img" aria-label="Painted map of Hollowmere showing the forge, training hall, apothecary, guild hall, town square and the Hollow Tower across the river"></canvas>
+        </div>
+      </div>
+      <p class="hint">Climb the tower floor by floor. Earn gold from hunts and bounties at the Guild Hall, then spend it at the forge, the training hall and the apothecary.</p>
+    </div>
+    <aside id="panel" aria-live="polite"></aside>
+  </div>
+  <footer><button class="btn danger" id="reset">Start a new game</button></footer>
+</div>
+<div class="toast" id="toast" hidden></div>
+
+<script>
+(function(){
+const W=1200,H=800;
+const LOC={
+  square:{name:"Lantern Square",sub:"Town centre · Inn",x:600,y:480,ly:560,r:85},
+  blacksmith:{name:"Ironhook Forge",sub:"Blacksmith",x:300,y:545,ly:560,r:80},
+  upgrades:{name:"Training Hall",sub:"Upgrades",x:330,y:300,ly:315,r:90},
+  potions:{name:"Mossbottle Apothecary",sub:"Potion shop",x:885,y:590,ly:605,r:80},
+  quests:{name:"Guild Hall",sub:"Quests",x:705,y:330,ly:345,r:80},
+  tower:{name:"The Hollow Tower",sub:"Boss tower",x:1010,y:250,ly:262,r:80}
+};
+const WEAPONS=[
+  {n:"Rusty Dagger",b:0,p:0,d:"Your grandfather's. Mostly rust."},
+  {n:"Iron Sword",b:3,p:60,d:"Honest steel, folded once."},
+  {n:"Steel Longsword",b:7,p:160,d:"Balanced for two-handed swings."},
+  {n:"Runeblade",b:13,p:400,d:"Etched with wards against the dead."}
+];
+const ARMOR=[
+  {n:"Travel Tunic",b:0,p:0,d:"Keeps the rain off. Barely."},
+  {n:"Boiled Leather",b:2,p:50,d:"Stiff, cheap, reliable."},
+  {n:"Chainmail",b:5,p:140,d:"Rings of riveted iron."},
+  {n:"Tower Plate",b:9,p:360,d:"Forged to survive the climb."}
+];
+const UPG=[
+  {k:"vit",n:"Vitality drills",d:"+10 max HP",base:40},
+  {k:"str",n:"Blade forms",d:"+2 ATK",base:50},
+  {k:"grd",n:"Shield work",d:"+1 DEF",base:45}
+];
+const POTS=[
+  {k:"heal",n:"Healing Draught",d:"Restores 30 HP",p:25},
+  {k:"greater",n:"Greater Remedy",d:"Restores all HP",p:70},
+  {k:"tonic",n:"Bull's Blood Tonic",d:"+5 ATK for one tower fight",p:45}
+];
+const FLOORS=[
+  {n:"Cellar Rat-King",hp:22,atk:5,g:30,f:"Fat on tower scraps and very proud of it."},
+  {n:"Skeleton Warden",hp:42,atk:9,g:55,f:"Still guarding a door no one remembers."},
+  {n:"Cursed Knight",hp:72,atk:14,g:90,f:"His oath outlived him."},
+  {n:"Gloam Wraith",hp:105,atk:19,g:140,f:"Cold enough to frost your breath at ten paces."},
+  {n:"The Hollow King",hp:190,atk:26,g:500,f:"The crown is the only part of him still solid.",boss:true}
+];
+const BOUNTIES=[
+  {id:"arm",n:"Arm yourself",d:"Buy a new weapon at Ironhook Forge.",g:40,goal:1,v:s=>s.weapon>0?1:0},
+  {id:"hunt",n:"Thin the wolf packs",d:"Hunt in the Thornwood 3 times.",g:45,goal:3,v:s=>s.hunts},
+  {id:"stock",n:"Stock the satchel",d:"Buy 3 potions at the apothecary.",g:30,goal:3,v:s=>s.bought},
+  {id:"f1",n:"First rung",d:"Clear floor 1 of the Hollow Tower.",g:50,goal:1,v:s=>Math.min(1,s.cleared)},
+  {id:"train",n:"Train hard",d:"Finish 3 lessons at the Training Hall.",g:80,goal:3,v:s=>s.up.vit+s.up.str+s.up.grd},
+  {id:"f3",n:"Into the dark",d:"Clear floor 3 of the tower.",g:120,goal:3,v:s=>s.cleared},
+  {id:"king",n:"End the Hollow King",d:"Defeat the boss on floor 5.",g:500,goal:5,v:s=>s.cleared}
+];
+const KEY="hollowmere-save-v1";
+function fresh(){return {gold:120,hp:40,weapon:0,armor:0,up:{vit:0,str:0,grd:0},pot:{heal:1,greater:0,tonic:0},cleared:0,hunts:0,bought:0,claimed:{},fight:null,sel:"square"}}
+let S=fresh();
+try{const raw=localStorage.getItem(KEY);if(raw){S=Object.assign(fresh(),JSON.parse(raw));}}catch(e){}
+function save(){try{localStorage.setItem(KEY,JSON.stringify(S))}catch(e){}}
+const maxHp=()=>40+S.up.vit*10;
+const atk=()=>4+WEAPONS[S.weapon].b+S.up.str*2+(S.fight&&S.fight.tonic?5:0);
+const def=()=>ARMOR[S.armor].b+S.up.grd;
+const ri=(a,b)=>a+Math.floor(Math.random()*(b-a+1));
+const upCost=u=>u.base*(S.up[u.k]+1);
+
+/* ---------- toast ---------- */
+const toastEl=document.getElementById("toast");let tt;
+function toast(m){toastEl.textContent=m;toastEl.hidden=false;clearTimeout(tt);tt=setTimeout(()=>toastEl.hidden=true,2600)}
+
+/* ---------- HUD ---------- */
+function hud(){
+  const mh=maxHp();
+  const potCount=S.pot.heal+S.pot.greater+S.pot.tonic;
+  document.getElementById("hud").innerHTML=
+   `<span class="chip"><span class="coin"></span><b>${S.gold}</b>&nbsp;gold</span>
+    <span class="chip"><span class="k">HP</span><span class="hpbar"><i style="width:${Math.max(0,S.hp/mh*100)}%"></i></span><b>${S.hp}/${mh}</b></span>
+    <span class="chip"><span class="k">ATK</span><b>${atk()}</b></span>
+    <span class="chip"><span class="k">DEF</span><b>${def()}</b></span>
+    <span class="chip"><span class="k">Potions</span><b>${potCount}</b></span>
+    <span class="chip"><span class="k">Tower</span><b>${S.cleared}/5</b></span>`;
+}
+
+/* ---------- panel ---------- */
+const panel=document.getElementById("panel");
+function head(k,eyebrow,flavor){const L=LOC[k];return `<div class="ph"><div class="eyebrow">${eyebrow}</div><h2>${L.name}</h2><p>${flavor}</p></div>`}
+function render(){
+  hud();
+  document.querySelectorAll(".pin").forEach(p=>p.classList.toggle("active",p.dataset.loc===S.sel));
+  const k=S.sel;let h="";
+  if(k==="square"){
+    const mh=maxHp();
+    h=head(k,"Town centre","Lanterns never go out here. The Sleeping Heron inn faces the fountain.")+
+    `<div class="pb"><div class="sec"><h3>The Sleeping Heron</h3><div class="rows">
+      <div class="row"><div><div class="n">Rent a bed</div><div class="d">Sleep until morning and wake at full health.</div></div>
+      <button class="btn primary" data-a="rest" ${S.hp>=mh||S.gold<10||S.fight?"disabled":""}>Rest · <span class="price" style="color:inherit">10g</span></button></div>
+    </div></div>
+    <div class="sec"><h3>Roads out of the square</h3><div class="rows">
+      ${["blacksmith","upgrades","potions","quests","tower"].map(x=>`<div class="row"><div><div class="n">${LOC[x].name}</div><div class="d">${LOC[x].sub}</div></div><button class="btn" data-go="${x}">Go</button></div>`).join("")}
+    </div></div></div>`;
+  }
+  else if(k==="blacksmith"){
+    const list=(arr,cur,kind,stat)=>arr.map((it,i)=>{
+      let b;if(i===cur)b=`<span class="status ok">Equipped</span>`;
+      else if(i<cur)b=`<span class="status">Outclassed</span>`;
+      else b=`<button class="btn primary" data-a="buy-${kind}" data-i="${i}" ${S.gold<it.p?"disabled":""}>Buy · ${it.p}g</button>`;
+      return `<div class="row"><div><div class="n">${it.n} <span class="price">+${it.b} ${stat}</span></div><div class="d">${it.d}</div></div>${b}</div>`}).join("");
+    h=head(k,"Blacksmith","Old Brannoc works the anvil from dawn. Each piece replaces the one you carry.")+
+    `<div class="pb"><div class="sec"><h3>Weapons</h3><div class="rows">${list(WEAPONS,S.weapon,"w","ATK")}</div></div>
+     <div class="sec"><h3>Armour</h3><div class="rows">${list(ARMOR,S.armor,"a","DEF")}</div></div></div>`;
+  }
+  else if(k==="upgrades"){
+    h=head(k,"Upgrades","Sergeant Vey trains anyone who pays. Lessons are permanent, up to five of each.")+
+    `<div class="pb"><div class="sec"><h3>Lessons</h3><div class="rows">${UPG.map(u=>{const lv=S.up[u.k],maxed=lv>=5;
+      return `<div class="row"><div><div class="n">${u.n}<span class="pips">${[0,1,2,3,4].map(i=>`<i class="${i<lv?"on":""}"></i>`).join("")}</span></div><div class="d">${u.d} per lesson</div></div>
+      ${maxed?`<span class="status ok">Mastered</span>`:`<button class="btn primary" data-a="up" data-k="${u.k}" ${S.gold<upCost(u)?"disabled":""}>Train · ${upCost(u)}g</button>`}</div>`}).join("")}</div></div>
+      <p class="note">Lesson prices rise with each level.</p></div>`;
+  }
+  else if(k==="potions"){
+    h=head(k,"Potion shop","Widow Marrow brews in the back. The green ones are safe. Probably.")+
+    `<div class="pb"><div class="sec"><h3>On the shelf</h3><div class="rows">${POTS.map(p=>`<div class="row"><div><div class="n">${p.n} <span class="d">· you have ${S.pot[p.k]}</span></div><div class="d">${p.d}</div></div>
+      <button class="btn primary" data-a="pot" data-k="${p.k}" ${S.gold<p.p?"disabled":""}>Buy · ${p.p}g</button></div>`).join("")}</div></div>
+     <div class="sec"><h3>Drink now</h3><div class="btns">
+      <button class="btn" data-a="drink" data-k="heal" ${!S.pot.heal||S.hp>=maxHp()?"disabled":""}>Healing Draught</button>
+      <button class="btn" data-a="drink" data-k="greater" ${!S.pot.greater||S.hp>=maxHp()?"disabled":""}>Greater Remedy</button></div>
+      <p class="note" style="margin-top:6px">Tonics are drunk inside the tower, at the start of a fight.</p></div></div>`;
+  }
+  else if(k==="quests"){
+    const hg=`${15+6*S.cleared}–${30+6*S.cleared}`;
+    h=head(k,"Quests","The guild board is papered three layers deep. Claim a bounty here once its work is done.")+
+    `<div class="pb"><div class="sec"><h3>Repeatable work</h3><div class="rows"><div class="row"><div><div class="n">Hunt in the Thornwood</div><div class="d">Earn ${hg} gold. Wolves bite for 6–14, less your DEF.</div></div>
+      <button class="btn primary" data-a="hunt" ${S.hp<=14||S.fight?"disabled":""}>Hunt</button></div></div>
+      ${S.hp<=14?`<p class="note">You are too wounded to hunt. Rest at the inn or drink a potion.</p>`:""}</div>
+     <div class="sec"><h3>Bounties</h3><div class="rows">${BOUNTIES.map(b=>{const v=Math.min(b.goal,b.v(S)),done=v>=b.goal,cl=S.claimed[b.id];
+      return `<div class="row"><div><div class="n">${b.n} <span class="price">${b.g}g</span></div><div class="d">${b.d} · ${v}/${b.goal}</div></div>
+      ${cl?`<span class="status ok">Claimed</span>`:done?`<button class="btn primary" data-a="claim" data-k="${b.id}">Claim</button>`:`<span class="status">Open</span>`}</div>`}).join("")}</div></div></div>`;
+  }
+  else if(k==="tower"){
+    const f=S.fight;let body="";
+    if(f){const F=FLOORS[f.floor];const mh=maxHp();
+      body=`<div class="fight"><div class="sec"><h3>Floor ${f.floor+1}${F.boss?" · Boss":""}</h3><div class="n" style="font-family:var(--font-display);font-size:22px">${F.n}</div><p class="flavor">${F.f}</p></div>
+      <div class="fighter"><span>You</span><span class="bar"><i style="width:${S.hp/mh*100}%"></i></span><b>${S.hp}/${mh}</b></div>
+      <div class="fighter"><span>${F.boss?"Boss":"Foe"}</span><span class="bar foe"><i style="width:${f.ehp/F.hp*100}%"></i></span><b>${f.ehp}/${F.hp}</b></div>
+      <div class="btns"><button class="btn primary" data-a="hit">Attack</button>
+        <button class="btn" data-a="fdrink" data-k="heal" ${!S.pot.heal?"disabled":""}>Draught (${S.pot.heal})</button>
+        <button class="btn" data-a="fdrink" data-k="greater" ${!S.pot.greater?"disabled":""}>Remedy (${S.pot.greater})</button>
+        ${f.tonic?"":`<button class="btn" data-a="tonic" ${!S.pot.tonic?"disabled":""}>Tonic (${S.pot.tonic})</button>`}
+        <button class="btn danger" data-a="flee">Flee</button></div>
+      <ul class="log">${f.log.map(l=>`<li>${l}</li>`).join("")}</ul></div>`;
+    } else if(S.cleared>=5){
+      body=`<div class="fight" style="border-color:var(--brass)"><div class="n" style="font-family:var(--font-display);font-size:24px;color:var(--brass)">The tower is silent.</div><p class="flavor">The Hollow King's crown lies cold on the top floor. Hollowmere sleeps easy tonight.</p></div>`;
+    } else {
+      const F=FLOORS[S.cleared];
+      body=`<div class="btns"><button class="btn primary" data-a="climb" ${S.hp<=0?"disabled":""}>Climb to floor ${S.cleared+1}: ${F.n}</button></div>
+      <p class="note">If you fall, the town watch carries you home and keeps a quarter of your gold for the trouble.</p>`;
+    }
+    h=head(k,"Boss tower","Five floors of stone and worse. Each floor's guardian must fall before the next stair opens.")+
+    `<div class="pb">${body}<div class="sec"><h3>Floors</h3><div class="rows">${FLOORS.map((F,i)=>{const st=i<S.cleared?`<span class="status ok">Cleared</span>`:F.boss?`<span class="status boss">Boss</span>`:i===S.cleared?`<span class="status">Next</span>`:`<span class="status">Sealed</span>`;
+      return `<div class="row"><div><div class="n">${i+1}. ${F.n}</div><div class="d">${F.hp} HP · ${F.atk} ATK · reward ${F.g}g</div></div>${st}</div>`}).join("")}</div></div></div>`;
+  }
+  panel.innerHTML=h;
+  drawFx(performance.now());
+}
+
+/* ---------- actions ---------- */
+function lose(){
+  const lost=Math.floor(S.gold*0.25);S.gold-=lost;S.hp=Math.ceil(maxHp()/2);S.fight=null;S.sel="square";
+  toast(`You fell. The watch carried you to Lantern Square and kept ${lost} gold.`);
+}
+function foeTurn(f){
+  const F=FLOORS[f.floor];const d=Math.max(1,F.atk+ri(-2,2)-def());S.hp=Math.max(0,S.hp-d);
+  f.log.unshift(`${F.n} hits you for ${d}.`);
+  if(S.hp<=0)lose();
+}
+const ACT={
+  rest(){if(S.gold<10)return;S.gold-=10;S.hp=maxHp();toast("You wake rested at full health.")},
+  "buy-w"(el){const i=+el.dataset.i,it=WEAPONS[i];if(S.gold<it.p||i<=S.weapon)return;S.gold-=it.p;S.weapon=i;toast(`Bought the ${it.n}.`)},
+  "buy-a"(el){const i=+el.dataset.i,it=ARMOR[i];if(S.gold<it.p||i<=S.armor)return;S.gold-=it.p;S.armor=i;toast(`Bought ${it.n}.`)},
+  up(el){const u=UPG.find(x=>x.k===el.dataset.k),c=upCost(u);if(S.gold<c||S.up[u.k]>=5)return;S.gold-=c;S.up[u.k]++;if(u.k==="vit")S.hp+=10;toast(`${u.n}: level ${S.up[u.k]}.`)},
+  pot(el){const p=POTS.find(x=>x.k===el.dataset.k);if(S.gold<p.p)return;S.gold-=p.p;S.pot[p.k]++;S.bought++;toast(`Bought a ${p.n}.`)},
+  drink(el){const k=el.dataset.k;if(!S.pot[k])return;S.pot[k]--;const before=S.hp;S.hp=k==="greater"?maxHp():Math.min(maxHp(),S.hp+30);toast(`Healed ${S.hp-before} HP.`)},
+  hunt(){if(S.hp<=14)return;const d=Math.max(0,ri(6,14)-def()),g=ri(15,30)+6*S.cleared;S.hp-=d;S.gold+=g;S.hunts++;toast(`The hunt pays ${g} gold. You took ${d} damage.`)},
+  claim(el){const b=BOUNTIES.find(x=>x.id===el.dataset.k);if(S.claimed[b.id]||b.v(S)<b.goal)return;S.claimed[b.id]=1;S.gold+=b.g;toast(`Bounty claimed: ${b.g} gold.`)},
+  climb(){if(S.cleared>=5)return;const F=FLOORS[S.cleared];S.fight={floor:S.cleared,ehp:F.hp,tonic:false,log:[`${F.n} blocks the stair.`]}},
+  hit(){const f=S.fight;if(!f)return;const F=FLOORS[f.floor];let d=Math.max(1,atk()+ri(-1,2));const crit=Math.random()<0.12;if(crit)d*=2;
+    f.ehp=Math.max(0,f.ehp-d);f.log.unshift(`You strike for ${d}${crit?" (critical!)":""}.`);
+    if(f.ehp<=0){S.gold+=F.g;S.cleared=Math.max(S.cleared,f.floor+1);S.fight=null;toast(F.boss?`The Hollow King falls! +${F.g} gold.`:`Floor ${f.floor+1} cleared. +${F.g} gold.`);return}
+    foeTurn(f)},
+  fdrink(el){const f=S.fight,k=el.dataset.k;if(!f||!S.pot[k])return;S.pot[k]--;const b=S.hp;S.hp=k==="greater"?maxHp():Math.min(maxHp(),S.hp+30);f.log.unshift(`You drink and recover ${S.hp-b} HP.`);foeTurn(f)},
+  tonic(){const f=S.fight;if(!f||!S.pot.tonic||f.tonic)return;S.pot.tonic--;f.tonic=true;f.log.unshift("Bull's Blood burns down your throat. +5 ATK.")},
+  flee(){const f=S.fight;if(!f)return;foeTurn(f);if(S.fight){S.fight=null;toast("You stumble back down the stairs.")}}
+};
+panel.addEventListener("click",e=>{
+  const go=e.target.closest("[data-go]");if(go){select(go.dataset.go);return}
+  const b=e.target.closest("[data-a]");if(!b||b.disabled)return;
+  ACT[b.dataset.a]&&ACT[b.dataset.a](b);save();render();
+});
+let resetArmed=false;const resetBtn=document.getElementById("reset");
+resetBtn.addEventListener("click",()=>{
+  if(!resetArmed){resetArmed=true;resetBtn.textContent="Click again to erase your progress";setTimeout(()=>{resetArmed=false;resetBtn.textContent="Start a new game"},3000);return}
+  resetArmed=false;resetBtn.textContent="Start a new game";S=fresh();save();render();toast("A new traveller arrives in Hollowmere.");
+});
+function select(k){S.sel=k;save();render();}
+
+/* ---------- map pins ---------- */
+const mapEl=document.getElementById("map");
+Object.entries(LOC).forEach(([k,L])=>{
+  const b=document.createElement("button");b.className="pin";b.dataset.loc=k;
+  b.style.left=(L.x/W*100)+"%";b.style.top=(L.ly/H*100)+"%";
+  b.innerHTML=`${L.name}<small>${L.sub}</small>`;b.addEventListener("click",()=>select(k));mapEl.appendChild(b);
+});
+
+/* ---------- canvas ---------- */
+const base=document.getElementById("base"),fx=document.getElementById("fx");
+const SC=Math.min(2,window.devicePixelRatio||1);
+[base,fx].forEach(c=>{c.width=W*SC;c.height=H*SC});
+const g=base.getContext("2d"),x2=fx.getContext("2d");g.scale(SC,SC);x2.scale(SC,SC);
+function mulberry(a){return function(){a|=0;a=a+0x6D2B79F5|0;let t=Math.imul(a^a>>>15,1|a);t=t+Math.imul(t^t>>>7,61|t)^t;return((t^t>>>14)>>>0)/4294967296}}
+const R=mulberry(7);
+const mid=(a,b)=>[(a[0]+b[0])/2,(a[1]+b[1])/2];
+function segs(p){const s=[];let a=p[0];for(let i=1;i<p.length-1;i++){const b=mid(p[i],p[i+1]);s.push([a,p[i],b]);a=b}const l=p[p.length-1];s.push([a,mid(a,l),l]);return s}
+function trace(ctx,p){const s=segs(p);ctx.beginPath();ctx.moveTo(s[0][0][0],s[0][0][1]);s.forEach(([a,c,b])=>ctx.quadraticCurveTo(c[0],c[1],b[0],b[1]))}
+function sample(p){const o=[];segs(p).forEach(([a,c,b])=>{for(let t=0;t<=1;t+=0.05){const u=1-t;o.push([u*u*a[0]+2*u*t*c[0]+t*t*b[0],u*u*a[1]+2*u*t*c[1]+t*t*b[1]])}});return o}
+const RIVER=[[500,-40],[610,90],[740,190],[880,272],[1040,330],[1240,355]];
+const ROADS=[
+  [[600,480],[470,520],[310,555]],
+  [[600,480],[740,560],[880,600]],
+  [[600,480],[480,400],[340,320]],
+  [[600,480],[660,410],[705,340]],
+  [[600,480],[800,440],[930,315],[1010,262]],
+  [[600,480],[575,650],[630,830]],
+  [[310,555],[140,575],[-30,610]],
+  [[340,320],[180,250],[-30,230]]
+];
+const LAKE={x:1080,y:710,rx:150,ry:85};
+const MTN=[[1150,150,95,125],[1070,120,70,95],[1205,175,60,90],[905,110,85,85],[820,70,70,70]];
+const riverPts=sample(RIVER),roadPts=ROADS.flatMap(sample);
+const towerRoad=sample(ROADS[4]);
+let bridge={x:0,y:0,a:0,d:1e9};
+towerRoad.forEach((p,i)=>riverPts.forEach(q=>{const d=Math.hypot(p[0]-q[0],p[1]-q[1]);if(d<bridge.d&&i>0&&i<towerRoad.length-1){const n=towerRoad[i+1],pr=towerRoad[i-1];bridge={x:p[0],y:p[1],a:Math.atan2(n[1]-pr[1],n[0]-pr[0]),d}}}));
+const near=(pts,x,y,r)=>pts.some(p=>Math.abs(p[0]-x)<r&&Math.abs(p[1]-y)<r&&Math.hypot(p[0]-x,p[1]-y)<r);
+const inMtn=(x,y)=>MTN.some(([mx,by,hw,h])=>y<by+10&&y>by-h&&Math.abs(x-mx)<hw*(1-(by-y)/h)+10);
+
+function drawBase(){
+  g.fillStyle="#3c5636";g.fillRect(0,0,W,H);
+  const greens=["#4a6a3e","#33502f","#56744a","#2d4529","#5f7b4b"];
+  for(let i=0;i<1100;i++){g.globalAlpha=0.06+R()*0.12;g.fillStyle=greens[i%5];g.beginPath();g.arc(R()*W,R()*H,15+R()*60,0,7);g.fill()}
+  g.globalAlpha=1;
+  // lake
+  g.fillStyle="#7b8458";g.beginPath();g.ellipse(LAKE.x,LAKE.y,LAKE.rx+12,LAKE.ry+10,-0.1,0,7);g.fill();
+  g.fillStyle="#2d5a6e";g.beginPath();g.ellipse(LAKE.x,LAKE.y,LAKE.rx,LAKE.ry,-0.1,0,7);g.fill();
+  g.strokeStyle="rgba(140,190,210,.35)";g.lineWidth=2;for(let i=0;i<7;i++){const yy=LAKE.y-50+i*15,xx=LAKE.x-80+R()*90;g.beginPath();g.moveTo(xx,yy);g.lineTo(xx+30+R()*30,yy);g.stroke()}
+  // river
+  g.lineCap="round";g.lineJoin="round";
+  trace(g,RIVER);g.strokeStyle="#7b8458";g.lineWidth=58;g.stroke();
+  trace(g,RIVER);g.strokeStyle="#2d5a6e";g.lineWidth=42;g.stroke();
+  trace(g,RIVER);g.strokeStyle="rgba(110,165,190,.35)";g.lineWidth=12;g.setLineDash([30,40]);g.stroke();g.setLineDash([]);
+  // mountains
+  MTN.slice().sort((a,b)=>a[0]-b[0]).forEach(([mx,by,hw,h])=>{
+    g.fillStyle="#6a6d6c";g.beginPath();g.moveTo(mx-hw,by);g.lineTo(mx,by-h);g.lineTo(mx+hw,by);g.closePath();g.fill();
+    g.fillStyle="#4c4f50";g.beginPath();g.moveTo(mx,by-h);g.lineTo(mx+hw,by);g.lineTo(mx+hw*0.15,by);g.closePath();g.fill();
+    g.fillStyle="#d9dcd8";g.beginPath();g.moveTo(mx,by-h);g.lineTo(mx-hw*0.28,by-h*0.7);g.lineTo(mx-hw*0.08,by-h*0.76);g.lineTo(mx+hw*0.06,by-h*0.68);g.lineTo(mx+hw*0.26,by-h*0.72);g.closePath();g.fill();
+  });
+  // roads
+  ROADS.forEach(r=>{trace(g,r);g.strokeStyle="#4e3b27";g.lineWidth=26;g.stroke()});
+  ROADS.forEach(r=>{trace(g,r);g.strokeStyle="#9c8160";g.lineWidth=18;g.stroke()});
+  ROADS.forEach(r=>{trace(g,r);g.strokeStyle="rgba(70,52,34,.35)";g.lineWidth=2;g.setLineDash([3,11]);g.stroke();g.setLineDash([])});
+  // bridge
+  g.save();g.translate(bridge.x,bridge.y);g.rotate(bridge.a);
+  g.fillStyle="rgba(0,0,0,.3)";g.fillRect(-48,-15,100,34);
+  g.fillStyle="#7a5a3a";g.fillRect(-50,-17,100,34);
+  g.strokeStyle="#5a4029";g.lineWidth=2;for(let i=-46;i<50;i+=8){g.beginPath();g.moveTo(i,-17);g.lineTo(i,17);g.stroke()}
+  g.fillStyle="#3e2c1c";g.fillRect(-52,-20,104,5);g.fillRect(-52,15,104,5);
+  g.restore();
+  // plaza
+  const P=LOC.square;
+  g.fillStyle="#6e6658";g.beginPath();g.arc(P.x,P.y,80,0,7);g.fill();
+  g.fillStyle="#8f8676";g.beginPath();g.arc(P.x,P.y,74,0,7);g.fill();
+  g.strokeStyle="rgba(60,52,40,.35)";g.lineWidth=1.5;
+  for(let r=20;r<74;r+=12){g.beginPath();g.arc(P.x,P.y,r,0,7);g.stroke()}
+  for(let a=0;a<6.28;a+=0.39){g.beginPath();g.moveTo(P.x+Math.cos(a)*28,P.y+Math.sin(a)*28);g.lineTo(P.x+Math.cos(a)*74,P.y+Math.sin(a)*74);g.stroke()}
+  g.fillStyle="#5d574d";g.beginPath();g.arc(P.x,P.y,25,0,7);g.fill();
+  g.fillStyle="#3d7590";g.beginPath();g.arc(P.x,P.y,19,0,7);g.fill();
+  g.fillStyle="#6c665b";g.beginPath();g.arc(P.x,P.y,6,0,7);g.fill();
+  // inn beside the square
+  // trees + buildings in depth order
+  const items=[];
+  for(let i=0;i<3200;i++){
+    const x=R()*(W+40)-20,y=R()*(H+40)-20;
+    const dTown=Math.hypot(x-600,(y-440)*1.2);
+    const dens=Math.min(1,Math.max(0.05,(dTown-180)/420));
+    if(R()>dens)continue;
+    if(near(roadPts,x,y,30)||near(riverPts,x,y,42))continue;
+    if(Object.values(LOC).some(L=>Math.hypot(x-L.x,y-(L.y-30))<L.r+20))continue;
+    if(((x-LAKE.x)/(LAKE.rx+25))**2+((y-LAKE.y)/(LAKE.ry+25))**2<1)continue;
+    if(inMtn(x,y))continue;
+    items.push({y,t:"tree",x,s:0.7+R()*0.6,c:R()});
+  }
+  Object.entries(LOC).forEach(([k,L])=>{if(k!=="square")items.push({y:L.y,t:k,x:L.x})});
+  items.push({y:625,t:"inn",x:455});
+  items.sort((a,b)=>a.y-b.y).forEach(it=>{if(it.t==="tree")tree(it);else B[it.t](it.x,it.y)});
+  // region labels
+  g.textAlign="center";g.font="italic 600 22px Grenze, Georgia, serif";
+  const lab=(t,x,y,rot=0,c="rgba(235,228,212,.55)")=>{g.save();g.translate(x,y);g.rotate(rot);g.fillStyle="rgba(10,14,12,.45)";g.fillText(t,1.5,1.5);g.fillStyle=c;g.fillText(t,0,0);g.restore()};
+  lab("T h e   T h o r n w o o d",190,720,-0.05);
+  lab("Gloam River",700,150,0.62,"rgba(190,220,232,.6)");
+  lab("Ashpeak",1120,30,0);
+  lab("Mirror Lake",LAKE.x,LAKE.y+6,0,"rgba(190,220,232,.6)");
+  lab("Old West Road",110,600,0.1);
+  // compass
+  const cx=1130,cy=520;g.save();g.translate(cx,cy);g.globalAlpha=.75;
+  g.strokeStyle="#e8dcc0";g.lineWidth=1.5;g.beginPath();g.arc(0,0,30,0,7);g.stroke();
+  g.fillStyle="#d9a441";g.beginPath();g.moveTo(0,-40);g.lineTo(7,0);g.lineTo(0,6);g.lineTo(-7,0);g.closePath();g.fill();
+  g.fillStyle="#e8dcc0";g.beginPath();g.moveTo(0,40);g.lineTo(7,0);g.lineTo(0,-6);g.lineTo(-7,0);g.closePath();g.fill();
+  g.font="700 15px Grenze, Georgia, serif";g.fillText("N",0,-46);g.restore();
+  // vignette
+  const v=g.createRadialGradient(W/2,H/2,H*0.45,W/2,H/2,H*0.95);v.addColorStop(0,"rgba(0,0,0,0)");v.addColorStop(1,"rgba(8,10,14,.55)");g.fillStyle=v;g.fillRect(0,0,W,H);
+}
+function shadow(x,y,w){g.fillStyle="rgba(10,14,10,.35)";g.beginPath();g.ellipse(x+6,y+2,w,w*0.22,0,0,7);g.fill()}
+function tree({x,y,s,c}){
+  const pal=c<.33?["#24401f","#335a2b","#4a7a3a"]:c<.66?["#1f3a26","#2c5236","#3f6f48"]:["#2f3f1c","#45592a","#617a38"];
+  g.fillStyle="rgba(10,14,10,.3)";g.beginPath();g.ellipse(x+4*s,y+2,13*s,4*s,0,0,7);g.fill();
+  g.fillStyle="#3b2a1b";g.fillRect(x-2*s,y-10*s,4*s,10*s);
+  g.fillStyle=pal[0];g.beginPath();g.arc(x,y-17*s,13*s,0,7);g.fill();
+  g.fillStyle=pal[1];g.beginPath();g.arc(x-3*s,y-20*s,10*s,0,7);g.fill();
+  g.fillStyle=pal[2];g.beginPath();g.arc(x-5*s,y-23*s,5*s,0,7);g.fill();
+}
+function poly(pts,fill){g.fillStyle=fill;g.beginPath();g.moveTo(pts[0][0],pts[0][1]);pts.slice(1).forEach(p=>g.lineTo(p[0],p[1]));g.closePath();g.fill()}
+const B={
+  blacksmith(x,y){
+    shadow(x,y,70);
+    g.fillStyle="#6f6a62";g.fillRect(x-55,y-58,110,58);
+    g.strokeStyle="rgba(40,36,32,.45)";g.lineWidth=1;
+    for(let r=0;r<4;r++){const yy=y-58+r*14.5;g.beginPath();g.moveTo(x-55,yy);g.lineTo(x+55,yy);g.stroke();for(let c=(r%2)*9;c<110;c+=18){g.beginPath();g.moveTo(x-55+c,yy);g.lineTo(x-55+c,yy+14.5);g.stroke()}}
+    g.fillStyle="#5a5550";g.fillRect(x+24,y-112,16,40);
+    poly([[x-66,y-56],[x,y-104],[x+66,y-56]],"#3a3433");
+    poly([[x,y-104],[x+66,y-56],[x+20,y-56]],"#2c2726");
+    g.fillStyle="#1d1715";g.fillRect(x-14,y-34,28,34);
+    g.fillStyle="#e07a2c";g.fillRect(x-10,y-28,20,28);
+    g.fillStyle="#f2b05a";g.fillRect(x-5,y-18,10,18);
+    g.fillStyle="#2a2c30";g.fillRect(x+64,y-16,26,8);g.fillRect(x+72,y-8,10,8);poly([[x+90,y-16],[x+100,y-12],[x+90,y-9]],"#2a2c30");
+    g.fillStyle="#7a5a3a";g.fillRect(x-92,y-22,22,22);g.fillStyle="#2a2c30";g.fillRect(x-88,y-34,4,14);g.fillRect(x-80,y-38,4,18);
+  },
+  potions(x,y){
+    shadow(x,y,60);
+    g.fillStyle="#7d6a52";g.fillRect(x-42,y-50,84,50);
+    g.strokeStyle="rgba(50,38,26,.5)";g.lineWidth=1.5;for(let i=-42;i<42;i+=10){g.beginPath();g.moveTo(x+i,y-50);g.lineTo(x+i,y);g.stroke()}
+    g.fillStyle="#5b3f7a";g.beginPath();g.arc(x,y-50,50,Math.PI,0);g.closePath();g.fill();
+    g.fillStyle="#46305f";g.beginPath();g.arc(x,y-50,50,-Math.PI/2,0);g.lineTo(x,y-50);g.closePath();g.fill();
+    g.strokeStyle="rgba(200,170,240,.35)";g.lineWidth=2;for(let a=-2.8;a<-0.2;a+=0.45){g.beginPath();g.moveTo(x,y-100);g.lineTo(x+Math.cos(a)*50,y-50+Math.sin(a)*50);g.stroke()}
+    g.fillStyle="#d9a441";g.beginPath();g.arc(x,y-104,5,0,7);g.fill();
+    g.fillStyle="#1e2a22";g.beginPath();g.arc(x+20,y-28,9,0,7);g.fill();
+    g.fillStyle="#7be0a0";g.beginPath();g.arc(x+20,y-28,6,0,7);g.fill();
+    g.fillStyle="#2e1f14";g.fillRect(x-14,y-30,20,30);
+    g.fillStyle="#222";g.beginPath();g.arc(x-72,y-12,16,0,Math.PI);g.fill();g.fillRect(x-88,y-16,32,5);
+    g.fillStyle="#5fcf86";g.beginPath();g.ellipse(x-72,y-15,14,3,0,0,7);g.fill();
+    g.strokeStyle="#3a2a1a";g.lineWidth=3;g.beginPath();g.moveTo(x-90,y);g.lineTo(x-80,y-30);g.moveTo(x-54,y);g.lineTo(x-64,y-30);g.stroke();
+  },
+  upgrades(x,y){
+    shadow(x,y,95);
+    g.fillStyle="#8a7a62";g.fillRect(x-78,y-56,156,56);
+    g.fillStyle="#5d4e3a";for(let i=-78;i<=70;i+=37)g.fillRect(x+i,y-56,8,56);
+    poly([[x-90,y-54],[x-62,y-96],[x+62,y-96],[x+90,y-54]],"#2f4f6e");
+    poly([[x+20,y-96],[x+62,y-96],[x+90,y-54],[x+30,y-54]],"#25405a");
+    g.fillStyle="#9b2f2a";g.fillRect(x-56,y-50,14,30);poly([[x-56,y-20],[x-49,y-12],[x-42,y-20]],"#9b2f2a");
+    g.fillRect(x+42,y-50,14,30);poly([[x+42,y-20],[x+49,y-12],[x+56,y-20]],"#9b2f2a");
+    g.fillStyle="#d9a441";g.fillRect(x-52,y-42,6,6);g.fillRect(x+46,y-42,6,6);
+    g.fillStyle="#2a2016";g.fillRect(x-16,y-38,32,38);
+    [[x+108,y-4],[x+136,y+12]].forEach(([dx,dy])=>{g.fillStyle="rgba(10,14,10,.3)";g.beginPath();g.ellipse(dx+3,dy,10,3,0,0,7);g.fill();
+      g.fillStyle="#5a4029";g.fillRect(dx-2,dy-34,4,34);g.fillRect(dx-14,dy-26,28,4);g.fillStyle="#b39566";g.beginPath();g.arc(dx,dy-38,8,0,7);g.fill();g.fillRect(dx-7,dy-30,14,16)});
+  },
+  quests(x,y){
+    shadow(x,y,75);
+    g.fillStyle="#c9b78f";g.fillRect(x-60,y-58,120,58);
+    g.fillStyle="#4b3420";g.fillRect(x-60,y-58,120,5);g.fillRect(x-60,y-30,120,4);
+    for(let i=-60;i<=56;i+=29)g.fillRect(x+i,y-58,5,58);
+    g.strokeStyle="#4b3420";g.lineWidth=4;g.beginPath();g.moveTo(x-55,y-54);g.lineTo(x-31,y-32);g.moveTo(x+55,y-54);g.lineTo(x+31,y-32);g.stroke();
+    poly([[x-72,y-56],[x,y-108],[x+72,y-56]],"#5c3d24");poly([[x,y-108],[x+72,y-56],[x+18,y-56]],"#47301c");
+    g.fillStyle="#d9a441";g.beginPath();g.arc(x,y-78,8,0,7);g.fill();g.fillStyle="#47301c";g.beginPath();g.arc(x,y-78,4,0,7);g.fill();
+    g.fillStyle="#2e1f14";g.fillRect(x-12,y-26,24,26);
+    g.fillStyle="#3b2a1b";g.fillRect(x-104,y-34,4,34);g.fillRect(x-72,y-34,4,34);
+    g.fillStyle="#7a5a3a";g.fillRect(x-108,y-44,44,24);
+    g.fillStyle="#efe6cf";[[-104,-41,10,8],[-91,-42,9,11],[-79,-40,11,8],[-100,-31,12,8],[-84,-30,9,7]].forEach(([a,b,w,h])=>g.fillRect(x+a,y+b,w,h));
+    g.fillStyle="#b23a30";g.fillRect(x-88,y-42,3,3);
+  },
+  tower(x,y){
+    const aura=g.createRadialGradient(x,y-110,10,x,y-110,150);aura.addColorStop(0,"rgba(150,90,220,.32)");aura.addColorStop(1,"rgba(150,90,220,0)");
+    g.fillStyle=aura;g.fillRect(x-160,y-270,320,300);
+    shadow(x,y,58);
+    poly([[x-44,y],[x-34,y-160],[x+34,y-160],[x+44,y]],"#2e2a36");
+    poly([[x+6,y],[x+8,y-160],[x+34,y-160],[x+44,y]],"#221f29");
+    g.fillStyle="rgba(255,255,255,.06)";for(let yy=y-150;yy<y;yy+=22)g.fillRect(x-42,yy,84,3);
+    g.fillStyle="#2e2a36";g.fillRect(x-42,y-176,84,18);
+    for(let i=-42;i<42;i+=16)g.fillRect(x+i,y-188,9,14);
+    poly([[x-30,y-176],[x,y-232],[x+30,y-176]],"#1a1620");
+    g.fillStyle="#120f16";g.fillRect(x-1.5,y-246,3,16);poly([[x+1,y-246],[x+18,y-240],[x+1,y-234]],"#8f2a2a");
+    g.fillStyle="#151219";g.beginPath();g.moveTo(x-14,y);g.lineTo(x-14,y-26);g.arc(x,y-26,14,Math.PI,0);g.lineTo(x+14,y);g.closePath();g.fill();
+    TOWER_WIN.forEach(([dx,dy])=>{g.fillStyle="#3a0f12";g.fillRect(x+dx-5,y+dy-9,10,18)});
+  },
+  inn(x,y){
+    shadow(x,y,48);
+    g.fillStyle="#a89775";g.fillRect(x-36,y-40,72,40);
+    g.fillStyle="#4b3420";g.fillRect(x-36,y-40,72,4);
+    poly([[x-44,y-38],[x,y-74],[x+44,y-38]],"#3c4a3a");poly([[x,y-74],[x+44,y-38],[x+12,y-38]],"#2f3b2e");
+    g.fillStyle="#f2c46a";g.fillRect(x-24,y-28,10,10);g.fillRect(x+14,y-28,10,10);
+    g.fillStyle="#2e1f14";g.fillRect(x-7,y-22,14,22);
+    g.fillStyle="#3b2a1b";g.fillRect(x+36,y-30,16,3);g.fillStyle="#d9a441";g.fillRect(x+42,y-27,10,10);
+  }
+};
+const TOWER_WIN=[[0,-70],[-16,-120],[16,-120],[0,-150],[-14,-40]];
+const LANTERNS=[[540,420],[660,420],[540,545],[660,545]];
+
+/* ---------- animated layer ---------- */
+const reduce=matchMedia("(prefers-reduced-motion: reduce)").matches;
+const smoke=[];
+function drawFx(t){
+  x2.clearRect(0,0,W,H);
+  const s=t/1000;
+  // selection ring
+  const L=LOC[S.sel];
+  if(L){x2.save();x2.strokeStyle="rgba(217,164,65,.9)";x2.lineWidth=2.5;x2.setLineDash([10,8]);x2.lineDashOffset=reduce?0:-s*20;
+    x2.beginPath();x2.ellipse(L.x,L.y+2,L.r,L.r*0.3,0,0,7);x2.stroke();x2.restore()}
+  // forge smoke
+  const sm=LOC.blacksmith;
+  smoke.forEach(p=>{x2.fillStyle=`rgba(190,190,185,${p.a})`;x2.beginPath();x2.arc(p.x,p.y,p.r,0,7);x2.fill()});
+  // forge glow
+  const fg=x2.createRadialGradient(sm.x,sm.y-14,2,sm.x,sm.y-14,55);fg.addColorStop(0,`rgba(255,150,60,${.35+.12*Math.sin(s*7)})`);fg.addColorStop(1,"rgba(255,150,60,0)");x2.fillStyle=fg;x2.fillRect(sm.x-60,sm.y-70,120,90);
+  // cauldron bubbles
+  const pc=LOC.potions;
+  for(let i=0;i<4;i++){const ph=(s*0.9+i*0.27)%1;x2.fillStyle=`rgba(120,230,160,${0.8*(1-ph)})`;x2.beginPath();x2.arc(pc.x-80+i*6,pc.y-18-ph*24,2+ph*3,0,7);x2.fill()}
+  // tower windows
+  const tw=LOC.tower;
+  TOWER_WIN.forEach(([dx,dy],i)=>{const a=reduce?.8:.55+.45*Math.sin(s*2+i*1.3);
+    const gr=x2.createRadialGradient(tw.x+dx,tw.y+dy,1,tw.x+dx,tw.y+dy,22);gr.addColorStop(0,`rgba(255,70,50,${a*.7})`);gr.addColorStop(1,"rgba(255,70,50,0)");x2.fillStyle=gr;x2.fillRect(tw.x+dx-22,tw.y+dy-22,44,44);
+    x2.fillStyle=`rgba(255,${90+60*a|0},70,${a})`;x2.fillRect(tw.x+dx-4,tw.y+dy-8,8,16)});
+  // boss-cleared: stop the menace
+  // lanterns
+  LANTERNS.forEach(([lx,ly],i)=>{x2.fillStyle="#2a2016";x2.fillRect(lx-1.5,ly-22,3,22);
+    const a=reduce?.9:.75+.25*Math.sin(s*3+i);const gr=x2.createRadialGradient(lx,ly-24,1,lx,ly-24,26);gr.addColorStop(0,`rgba(255,200,110,${a*.6})`);gr.addColorStop(1,"rgba(255,200,110,0)");
+    x2.fillStyle=gr;x2.fillRect(lx-26,ly-50,52,52);x2.fillStyle="#ffd98a";x2.fillRect(lx-3,ly-28,6,7)});
+  // fountain sparkle
+  const fq=LOC.square;x2.strokeStyle="rgba(200,235,250,.5)";x2.lineWidth=1.5;
+  for(let i=0;i<3;i++){const r=((s*0.6+i/3)%1)*16+3;x2.globalAlpha=1-r/19;x2.beginPath();x2.arc(fq.x,fq.y,r,0,7);x2.stroke()}x2.globalAlpha=1;
+}
+function tick(t){
+  const sm=LOC.blacksmith;
+  if(Math.random()<0.25)smoke.push({x:sm.x+32+Math.random()*4,y:sm.y-114,r:4,a:.45,vx:.25+Math.random()*.3});
+  for(let i=smoke.length-1;i>=0;i--){const p=smoke[i];p.y-=.5;p.x+=p.vx;p.r+=.08;p.a-=.004;if(p.a<=0)smoke.splice(i,1)}
+  drawFx(t);requestAnimationFrame(tick);
+}
+fx.addEventListener("click",e=>{
+  const r=fx.getBoundingClientRect(),mx=(e.clientX-r.left)/r.width*W,my=(e.clientY-r.top)/r.height*H;
+  let best=null,bd=1e9;Object.entries(LOC).forEach(([k,L])=>{const d=Math.hypot(mx-L.x,(my-(L.y-40))*0.9);if(d<L.r+20&&d<bd){bd=d;best=k}});
+  if(best)select(best);
+});
+
+function boot(){drawBase();render();if(!reduce)requestAnimationFrame(tick)}
+if(document.fonts&&document.fonts.load){Promise.all([document.fonts.load("600 22px Grenze"),document.fonts.load("italic 600 22px Grenze")]).catch(()=>{}).finally(boot)}else boot();
+})();
+</script>
